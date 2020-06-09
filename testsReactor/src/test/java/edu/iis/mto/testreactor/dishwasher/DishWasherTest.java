@@ -2,6 +2,7 @@ package edu.iis.mto.testreactor.dishwasher;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.when;
 
@@ -78,6 +79,18 @@ class DishWasherTest {
         when(dirtFilter.capacity()).thenReturn(DishWasher.MAXIMAL_FILTER_CAPACITY - 1d);
         RunResult result = dishWasher.start(programConfiguration);
         assertSame(result.getStatus(), Status.ERROR_FILTER);
+    }
+
+    @Test
+    public void shouldBeSuccessfullWhenNotUsingTablets() {
+        ProgramConfiguration programConfiguration = ProgramConfiguration.builder()
+                .withProgram(irreleventWashingProgram)
+                .withTabletsUsed(false)
+                .withFillLevel(irreleventFillLevel)
+                .build();
+        when(door.closed()).thenReturn(true);
+        RunResult result = dishWasher.start(programConfiguration);
+        assertSame(result.getStatus(), Status.SUCCESS);
     }
 
     // BEHAVIORAL TESTS

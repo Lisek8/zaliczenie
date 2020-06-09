@@ -72,4 +72,16 @@ class DishWasherTest {
         assertSame(result.getStatus(), Status.DOOR_OPEN);
     }
 
+    @Test
+    public void shouldReturnErrorFilterErrorOnDirtyFilter() {
+        programConfiguration = ProgramConfiguration.builder()
+                .withProgram(washingProgram)
+                .withTabletsUsed(true)
+                .withFillLevel(fillLevel)
+                .build();
+        when(door.closed()).thenReturn(true);
+        when(dirtFilter.capacity()).thenReturn(DishWasher.MAXIMAL_FILTER_CAPACITY - 1d);
+        RunResult result = dishWasher.start(programConfiguration);
+        assertSame(result.getStatus(), Status.ERROR_FILTER);
+    }
 }

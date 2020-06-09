@@ -51,10 +51,11 @@ class DishWasherTest {
     public void shouldWashDishesSuccessfullyWithAnyProgram() {
         programConfiguration = ProgramConfiguration.builder()
                                                    .withProgram(washingProgram)
-                                                   .withTabletsUsed(false)
+                                                   .withTabletsUsed(true)
                                                    .withFillLevel(fillLevel)
                                                    .build();
         when(door.closed()).thenReturn(true);
+        when(dirtFilter.capacity()).thenReturn(DishWasher.MAXIMAL_FILTER_CAPACITY + 1d);
         RunResult result = dishWasher.start(programConfiguration);
         assertSame(result.getStatus(), Status.SUCCESS);
     }

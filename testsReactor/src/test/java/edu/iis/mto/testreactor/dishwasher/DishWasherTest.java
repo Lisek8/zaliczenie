@@ -31,14 +31,16 @@ class DishWasherTest {
     // DATA
     private DishWasher dishWasher;
     private ProgramConfiguration programConfiguration;
-    private WashingProgram washingProgram;
-    private FillLevel fillLevel;
+    private WashingProgram irreleventWashingProgram;
+    private FillLevel irreleventFillLevel;
+    private boolean irreleventTabletsUsed;
 
     @BeforeEach
     public void setup() {
         dishWasher = new DishWasher(waterPump, engine, dirtFilter, door);
-        washingProgram = WashingProgram.ECO;
-        fillLevel = FillLevel.FULL;
+        irreleventWashingProgram = WashingProgram.ECO;
+        irreleventFillLevel = FillLevel.FULL;
+        irreleventTabletsUsed = true;
     }
 
     @Test
@@ -50,9 +52,9 @@ class DishWasherTest {
     @Test
     public void shouldWashDishesSuccessfullyWithAnyProgram() {
         programConfiguration = ProgramConfiguration.builder()
-                                                   .withProgram(washingProgram)
-                                                   .withTabletsUsed(true)
-                                                   .withFillLevel(fillLevel)
+                                                   .withProgram(irreleventWashingProgram)
+                                                   .withTabletsUsed(irreleventTabletsUsed)
+                                                   .withFillLevel(irreleventFillLevel)
                                                    .build();
         when(door.closed()).thenReturn(true);
         when(dirtFilter.capacity()).thenReturn(DishWasher.MAXIMAL_FILTER_CAPACITY + 1d);
@@ -63,9 +65,9 @@ class DishWasherTest {
     @Test
     public void shouldReturnOpenDoorErrorOnOpenDoor() {
         programConfiguration = ProgramConfiguration.builder()
-                .withProgram(washingProgram)
-                .withTabletsUsed(true)
-                .withFillLevel(fillLevel)
+                .withProgram(irreleventWashingProgram)
+                .withTabletsUsed(irreleventTabletsUsed)
+                .withFillLevel(irreleventFillLevel)
                 .build();
         when(door.closed()).thenReturn(false);
         RunResult result = dishWasher.start(programConfiguration);
@@ -75,9 +77,9 @@ class DishWasherTest {
     @Test
     public void shouldReturnErrorFilterErrorOnDirtyFilter() {
         programConfiguration = ProgramConfiguration.builder()
-                .withProgram(washingProgram)
-                .withTabletsUsed(true)
-                .withFillLevel(fillLevel)
+                .withProgram(irreleventWashingProgram)
+                .withTabletsUsed(irreleventTabletsUsed)
+                .withFillLevel(irreleventFillLevel)
                 .build();
         when(door.closed()).thenReturn(true);
         when(dirtFilter.capacity()).thenReturn(DishWasher.MAXIMAL_FILTER_CAPACITY - 1d);

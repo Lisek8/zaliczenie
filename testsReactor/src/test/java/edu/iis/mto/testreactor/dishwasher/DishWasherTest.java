@@ -14,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import edu.iis.mto.testreactor.dishwasher.engine.Engine;
+import edu.iis.mto.testreactor.dishwasher.engine.EngineException;
+import edu.iis.mto.testreactor.dishwasher.pump.PumpException;
 import edu.iis.mto.testreactor.dishwasher.pump.WaterPump;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,6 +44,11 @@ class DishWasherTest {
         irreleventWashingProgram = WashingProgram.ECO;
         irreleventFillLevel = FillLevel.FULL;
         irreleventTabletsUsed = true;
+        programConfiguration = ProgramConfiguration.builder()
+                                                   .withProgram(irreleventWashingProgram)
+                                                   .withTabletsUsed(irreleventTabletsUsed)
+                                                   .withFillLevel(irreleventFillLevel)
+                                                   .build();
     }
 
     @Test
@@ -52,11 +59,6 @@ class DishWasherTest {
     // STATE TESTS
     @Test
     public void shouldWashDishesSuccessfullyWithAnyProgram() {
-        programConfiguration = ProgramConfiguration.builder()
-                                                   .withProgram(irreleventWashingProgram)
-                                                   .withTabletsUsed(irreleventTabletsUsed)
-                                                   .withFillLevel(irreleventFillLevel)
-                                                   .build();
         when(door.closed()).thenReturn(true);
         when(dirtFilter.capacity()).thenReturn(DishWasher.MAXIMAL_FILTER_CAPACITY + 1d);
         RunResult result = dishWasher.start(programConfiguration);
@@ -65,11 +67,6 @@ class DishWasherTest {
 
     @Test
     public void shouldReturnOpenDoorErrorOnOpenDoor() {
-        programConfiguration = ProgramConfiguration.builder()
-                                                   .withProgram(irreleventWashingProgram)
-                                                   .withTabletsUsed(irreleventTabletsUsed)
-                                                   .withFillLevel(irreleventFillLevel)
-                                                   .build();
         when(door.closed()).thenReturn(false);
         RunResult result = dishWasher.start(programConfiguration);
         assertSame(result.getStatus(), Status.DOOR_OPEN);
@@ -77,11 +74,6 @@ class DishWasherTest {
 
     @Test
     public void shouldReturnErrorFilterErrorOnDirtyFilter() {
-        programConfiguration = ProgramConfiguration.builder()
-                                                   .withProgram(irreleventWashingProgram)
-                                                   .withTabletsUsed(irreleventTabletsUsed)
-                                                   .withFillLevel(irreleventFillLevel)
-                                                   .build();
         when(door.closed()).thenReturn(true);
         when(dirtFilter.capacity()).thenReturn(DishWasher.MAXIMAL_FILTER_CAPACITY - 1d);
         RunResult result = dishWasher.start(programConfiguration);
@@ -91,16 +83,64 @@ class DishWasherTest {
     // BEHAVIORAL TESTS
     @Test
     public void shouldCheckIfDoorIsClosedAndIfFilterIsClean() {
-        programConfiguration = ProgramConfiguration.builder()
-                                                   .withProgram(irreleventWashingProgram)
-                                                   .withTabletsUsed(true)
-                                                   .withFillLevel(irreleventFillLevel)
-                                                   .build();
+        ProgramConfiguration programConfiguration = ProgramConfiguration.builder()
+                                                                        .withProgram(irreleventWashingProgram)
+                                                                        .withTabletsUsed(true)
+                                                                        .withFillLevel(irreleventFillLevel)
+                                                                        .build();
         when(door.closed()).thenReturn(true);
         dishWasher.start(programConfiguration);
         InOrder order = inOrder(door, dirtFilter);
-        order.verify(door).closed();
-        order.verify(dirtFilter).capacity();
+        order.verify(door)
+             .closed();
+        order.verify(dirtFilter)
+             .capacity();
+    }
+
+    @Test
+    public void shouldUseWaterPumpAndEngineDuringRinseTest() throws PumpException, EngineException {
+        WashingProgram washingProgram = WashingProgram.RINSE;
+        ProgramConfiguration programConfiguration = ProgramConfiguration.builder()
+                                                                        .withProgram(irreleventWashingProgram)
+                                                                        .withTabletsUsed(irreleventTabletsUsed)
+                                                                        .withFillLevel(irreleventFillLevel)
+                                                                        .build();
+        when(door.closed()).thenReturn(true);
+        when(dirtFilter.capacity()).thenReturn(DishWasher.MAXIMAL_FILTER_CAPACITY + 1d);
+        dishWasher.start(programConfiguration);
+        InOrder order = inOrder(waterPump, engine);
+        order.verify(waterPump)
+             .pour(irreleventFillLevel);
+        order.verify(engine)
+             .runProgram(washingProgram);
+        order.verify(waterPump)
+             .drain();
+    }
+
+    @Test
+    public void shouldUseWaterPumpAndEngineDuringOtherThanRinseTest() throws PumpException, EngineException {
+        WashingProgram anyWashingProgramExceptForRinse = WashingProgram.INTENSIVE;
+        ProgramConfiguration programConfiguration = ProgramConfiguration.builder()
+                                                                        .withProgram(anyWashingProgramExceptForRinse)
+                                                                        .withTabletsUsed(irreleventTabletsUsed)
+                                                                        .withFillLevel(irreleventFillLevel)
+                                                                        .build();
+        when(door.closed()).thenReturn(true);
+        when(dirtFilter.capacity()).thenReturn(DishWasher.MAXIMAL_FILTER_CAPACITY + 1d);
+        dishWasher.start(programConfiguration);
+        InOrder order = inOrder(waterPump, engine);
+        order.verify(waterPump)
+             .pour(irreleventFillLevel);
+        order.verify(engine)
+             .runProgram(anyWashingProgramExceptForRinse);
+        order.verify(waterPump)
+             .drain();
+        order.verify(waterPump)
+             .pour(irreleventFillLevel);
+        order.verify(engine)
+             .runProgram(WashingProgram.RINSE);
+        order.verify(waterPump)
+             .drain();
     }
 
 }
